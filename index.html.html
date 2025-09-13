@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Wellness Monitor — Gentle Check-ins</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes aurora {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .bg-aurora {
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(16,185,129,.18), transparent 60%),
+                  radial-gradient(1200px 600px at 85% 20%, rgba(14,165,233,.18), transparent 60%),
+                  radial-gradient(1200px 600px at 50% 90%, rgba(168,85,247,.18), transparent 60%),
+                  linear-gradient(120deg, #0ea5e9, #7c3aed, #22c55e, #f59e0b);
+      background-size: 300% 300%;
+      animation: aurora 22s ease infinite;
+    }
+    .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .pop { animation: pop .18s ease; }
+    @keyframes pop { from { transform: scale(.98); opacity:.8; } to { transform: scale(1); opacity:1; } }
+    .card-hover { transition: transform .15s ease, box-shadow .2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(0,0,0,.25); }
+    .mood-pill { transition: transform .12s ease; }
+    .mood-pill:active { transform: scale(.96); }
+    .ring-smooth { transition: box-shadow .15s ease; }
+    .dot { width: 8px; height: 8px; border-radius: 9999px; }
+    .grid-auto-fit { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  </style>
+</head>
+<body class="min-h-screen bg-aurora text-white">
+  <!-- Header -->
+  <header class="sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg width="34" height="34" viewBox="0 0 64 64">
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22c55e"/>
+              <stop offset="100%" stop-color="#0ea5e9"/>
+            </linearGradient>
+          </defs>
+        <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#lg)"></rect>
+        <path d="M20 36c4 6 12 6 16 0M24 26h0M40 26h0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">Student Wellness Monitor</h1>
+          <p class="text-white/80 text-sm -mt-0.5">Daily mood, gentle insights, and supportive tips — just for you.</p>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2">
+        <span class="text-xs bg-white/10 border border-white/15 px-3 py-1.5 rounded-full">Private • Local</span>
+        <span class="text-xs bg-white/10 border border-white/15 px-3 py-1.5 rounded-full">Mood Trends</span>
+        <span class="text-xs bg-lime-400/20 text-lime-200 border border-lime-400/30 px-3 py-1.5 rounded-full">Personal Tips</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto px-5 py-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <!-- Column: Check-in -->
+    <section class="xl:col-span-2 space-y-6">
+      <!-- Daily Check-in -->
+      <div class="glass bg-white/10 rounded-2xl border border-white/15 shadow-xl overflow-hidden card-hover">
+        <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 class="font-semibold">Daily Check-in</h2>
+          <div class="text-xs text-white/80" id="todayLabel"></div>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <button class="mood-pill px-3 py-2 rounded-xl bg-rose-500/70 hover:bg-rose-500 ring-smooth" data-mood="1">😞 Low</button>
+            <button class="mood-pill px-3 py-2 rounded-xl bg-orange-500/70 hover:bg-orange-500 ring-smooth" data-mood="2">🙁 Meh</button>
+            <button class="mood-pill px-3 py-2 rounded-xl bg-amber-500/70 hover:bg-amber-500 ring-smooth" data-mood="3">😐 Okay</button>
+            <button class="mood-pill px-3 py-2 rounded-xl bg-emerald-500/70 hover:bg-emerald-500 ring-smooth" data-mood="4">🙂 Good</button>
+            <button class="mood-pill px-3 py-2 rounded-xl bg-sky-500/70 hover:bg-sky-500 ring-smooth" data-mood="5">😄 Great</button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-black/30 rounded-xl p-3 border border-white/10">
+              <label class="block text-sm text-white/80 mb-1">Stress</label>
+              <input id="stress" type="range" min="0" max="10" value="3" class="w-full">
+              <div class="text-xs text-white/70">0 calm — 10 tense</div>
+            </div>
+            <div class="bg-black/30 rounded-xl p-3 border border-white/10">
+              <label class="block text-sm text-white/80 mb-1">Sleep</label>
+              <input id="sleep" type="range" min="0" max="10" value="7" class="w-full">
+              <div class="text-xs text-white/70">0 poor — 10 great</div>
+            </div>
+            <div class="bg-black/30 rounded-xl p-3 border border-white/10">
+              <label class="block text-sm text-white/80 mb-1">Energy</label>
+              <input id="energy" type="range" min="0" max="10" value="6" class="w-full">
+              <div class="text-xs text-white/70">0 low — 10 high</div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm text-white/80 mb-1">Optional note</label>
+            <textarea id="note" class="w-full min-h-[90px] bg-black/40 border border-white/10 rounded-xl px-3 py-2" placeholder="How are you feeling? Anything you'd like to remember?"></textarea>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-save" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600">Save Check-in</button>
+            <button id="btn-clear-note" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15">Clear</button>
+            <span id="saveStatus" class="text-xs text-white/80"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insights & Recommendations -->
+      <div class="glass bg-white/10 rounded-2xl border border-white/15 shadow-xl overflow-hidden card-hover">
+        <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 class="font-semibold">Insights</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button id="range-week" class="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 hover:bg-white/20">Weekly</button>
+            <button id="range-month" class="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 hover:bg-white/20">Monthly</button>
+          </div>
+        </div>
+        <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+            <h4 class="text-sm font-semibold mb-2">Sentiment</h4>
+            <div id="sentimentText" class="text-sm text-white/90"></div>
+            <div id="sentimentTags" class="flex flex-wrap gap-2 mt-2"></div>
+          </div>
+          <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+            <h4 class="text-sm font-semibold mb-2">Streaks</h4>
+            <div id="streakText" class="text-sm text-white/90"></div>
+            <div id="habitBadges" class="flex gap-2 mt-2"></div>
+          </div>
+          <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+            <h4 class="text-sm font-semibold mb-2">Recommendations</h4>
+            <ul id="tips" class="text-sm text-white/90 space-y-2 list-disc pl-5"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column: Trends + Toolkit -->
+    <section class="space-y-6">
+      <!-- Trend Visualization -->
+      <div class="glass bg-white/10 rounded-2xl border border-white/15 shadow-xl overflow-hidden card-hover">
+        <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 class="font-semibold">Trend Visualization</h2>
+          <span class="text-xs text-white/80">Mood, Stress, Sleep, Energy</span>
+        </div>
+        <div class="p-5">
+          <div class="h-56 rounded-xl bg-black/40 border border-white/10 p-3 relative">
+            <canvas id="trendCanvas" class="w-full h-full"></canvas>
+            <div id="hoverTip" class="hidden absolute text-xs bg-slate-900/95 border border-white/10 rounded-md px-2 py-1 pointer-events-none"></div>
+          </div>
+          <div class="mt-3 flex items-center gap-2 text-xs flex-wrap">
+            <label class="flex items-center gap-2"><input type="checkbox" class="accent-emerald-400" id="toggleMood" checked> Mood</label>
+            <label class="flex items-center gap-2"><input type="checkbox" class="accent-sky-400" id="toggleStress" checked> Stress</label>
+            <label class="flex items-center gap-2"><input type="checkbox" class="accent-amber-400" id="toggleSleep" checked> Sleep</label>
+            <label class="flex items-center gap-2"><input type="checkbox" class="accent-fuchsia-400" id="toggleEnergy" checked> Energy</label>
+            <span class="ml-auto text-white/70">Tip: hover the chart for details</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wellness Toolkit (unique, quick actions) -->
+      <div class="glass bg-white/10 rounded-2xl border border-white/15 shadow-xl overflow-hidden card-hover">
+        <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 class="font-semibold">Wellness Toolkit</h2>
+          <span class="text-xs text-white/80">Quick resets and mini practices</span>
+        </div>
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+            <h4 class="text-sm font-semibold mb-2">Box Breathing</h4>
+            <div class="text-xs text-white/80">Inhale 4s • Hold 4s • Exhale 4s • Hold 4s</div>
+            <div class="mt-3 flex items-center gap-2">
+              <button id="breathStart" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600">Start 1 min</button>
+              <span id="breathStatus" class="text-xs text-white/70"></span>
+            </div>
+            <div class="mt-3 h-2 w-full bg-white/10 rounded-full overflow-hidden">
+              <div id="breathBar" class="h-full bg-emerald-400" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+            <h4 class="text-sm font-semibold mb-2">Gratitude Prompt</h4>
+            <div class="text-xs text-white/80">What are 3 small things you appreciate today?</div>
+            <div class="mt-2 grid grid-cols-1 gap-2">
+              <input id="g1" class="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="1st"/>
+              <input id="g2" class="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="2nd"/>
+              <input id="g3" class="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="3rd"/>
+              <button id="saveGratitude" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-sm">Save</button>
+              <div id="gratitudeStatus" class="text-xs text-white/70"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy & Export -->
+      <div class="glass bg-white/10 rounded-2xl border border-white/15 shadow-xl overflow-hidden card-hover">
+        <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 class="font-semibold">Privacy & Export</h2>
+          <span class="text-xs text-white/80">Your data lives only on this device</span>
+        </div>
+        <div class="p-5 flex items-center gap-2 flex-wrap">
+          <button id="btn-export" class="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 hover:bg-white/20 text-sm">Export Data</button>
+          <button id="btn-import" class="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 hover:bg-white/20 text-sm">Import Data</button>
+          <input id="importFile" type="file" accept="application/json" class="hidden" />
+          <span id="exportStatus" class="text-xs text-white/70"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-5 py-8 text-white/80">
+    <div class="text-center text-xs">
+      Built with care by Canva Code — a friendly space to notice, reflect, and grow.
+    </div>
+  </footer>
+
+  <script>
+    // Utilities
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    const fmtDate = d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const todayISO = () => new Date().toISOString().slice(0,10);
+
+    // Storage
+    const KEY = 'swm_data_v1';
+    function loadData(){
+      try { return JSON.parse(localStorage.getItem(KEY)) || { entries: [], gratitude: [] }; }
+      catch { return { entries: [], gratitude: [] }; }
+    }
+    function saveData(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
+
+    // Sentiment (simple on-device)
+    const POS = ['grateful','great','happy','joy','calm','proud','excited','win','good','okay','energized','rested'];
+    const NEG = ['tired','anxious','stressed','sad','worried','overwhelmed','angry','lonely','bad','burnt','behind','meh','sick'];
+    function analyzeSentiment(notes){
+      const text = notes.join(' ').toLowerCase();
+      let p = 0, n = 0;
+      POS.forEach(w => { const m = text.match(new RegExp("\\b"+w+"\\b","g")); p += m? m.length:0; });
+      NEG.forEach(w => { const m = text.match(new RegExp("\\b"+w+"\\b","g")); n += m? m.length:0; });
+      const score = p - n;
+      let label = 'Balanced';
+      if(score >= 2) label = 'Optimistic';
+      else if(score <= -2) label = 'Tender (needs care)';
+      return { score, label, p, n, tags: [p>0? 'positive':null, n>0? 'challenging':null].filter(Boolean) };
+    }
+
+    // Recommendations engine (rule-based, private)
+    function getRecommendations(entry, entries){
+      const tips = [];
+      if(entry.stress >= 7) tips.push("Try 3 rounds of box breathing (4-4-4-4).");
+      if(entry.sleep <= 4) tips.push("Aim for a gentle 30 min wind-down before bed.");
+      if(entry.energy <= 3) tips.push("A short walk and hydration can help restore energy.");
+      if(entry.mood <= 2) tips.push("Check in with someone you trust or write a few kind words to yourself.");
+      // Trends
+      const last7 = entries.slice(-7);
+      const avg = k => last7.length ? Math.round(last7.reduce((a,e)=>a+e[k],0)/last7.length) : null;
+      const avgStress = avg('stress'), avgSleep = avg('sleep');
+      if(avgStress >= 6) tips.push("Consider scheduling 2 short breaks during study blocks this week.");
+      if(avgSleep && avgSleep <= 5) tips.push("Try consistent sleep and wake times for a few days.");
+      if(tips.length === 0) tips.push("Keep doing what works: a tiny daily habit you enjoy counts.");
+      return tips.slice(0,4);
+    }
+
+    // Streaks
+    function calcStreaks(entries){
+      const days = new Set(entries.map(e=>e.date));
+      let streak = 0;
+      let d = new Date();
+      for(;;){
+        const iso = d.toISOString().slice(0,10);
+        if(days.has(iso)){ streak++; d.setDate(d.getDate()-1); } else break;
+      }
+      const longest = (() => {
+        if(entries.length===0) return 0;
+        let max=1, cur=1;
+        const sorted = [...entries].sort((a,b)=>a.date.localeCompare(b.date));
+        for(let i=1;i<sorted.length;i++){
+          const prev = new Date(sorted[i-1].date);
+          const curr = new Date(sorted[i].date);
+          const diff = (curr - prev) / 86400000;
+          if(diff <= 1.2) { cur++; max = Math.max(max, cur); } else { cur=1; }
+        }
+        return max;
+      })();
+      return { current: streak, longest };
+    }
+
+    // Chart rendering
+    const canvas = $("#trendCanvas");
+    const tip = $("#hoverTip");
+    function resizeCanvas(){
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      drawChart();
+    }
+    window.addEventListener("resize", resizeCanvas);
+
+    function getRange(entries, days){
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-days+1);
+      return entries.filter(e => new Date(e.date) >= cutoff);
+    }
+
+    function drawChart(){
+      const ctx = canvas.getContext('2d'); if(!ctx) return;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const data = getRange(loadData().entries, currentRange);
+      const w = canvas.width, h = canvas.height, pad = 30*devicePixelRatio;
+      // axes
+      ctx.strokeStyle = "rgba(255,255,255,.25)";
+      ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+      // labels
+      ctx.fillStyle = "rgba(255,255,255,.7)";
+      ctx.font = 12*devicePixelRatio + "px ui-sans-serif";
+      ctx.fillText("Low", 4*devicePixelRatio, h-pad);
+      ctx.fillText("High", 4*devicePixelRatio, pad+4*devicePixelRatio);
+
+      const series = [
+        { key:'mood', color:'#34d399', enabled: $("#toggleMood").checked, max:5, min:1 },
+        { key:'stress', color:'#38bdf8', enabled: $("#toggleStress").checked, max:10, min:0, invert:true },
+        { key:'sleep', color:'#f59e0b', enabled: $("#toggleSleep").checked, max:10, min:0 },
+        { key:'energy', color:'#e879f9', enabled: $("#toggleEnergy").checked, max:10, min:0 },
+      ];
+      // x positions
+      const xs = data.map((_,i)=> pad + (i*(w-2*pad))/Math.max(1,data.length-1));
+      // draw each series
+      series.forEach(s=>{
+        if(!s.enabled) return;
+        ctx.strokeStyle = s.color; ctx.lineWidth = 2*devicePixelRatio;
+        ctx.beginPath();
+        data.forEach((e, i)=>{
+          const val = e[s.key];
+          const t = (val - s.min) / (s.max - s.min || 1);
+          const y = s.invert ? pad + (1-t)(h-2*pad) : h - pad - t(h-2*pad);
+          const x = xs[i];
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+        // dots
+        data.forEach((e,i)=>{
+          const val = e[s.key];
+          const t = (val - s.min) / (s.max - s.min || 1);
+          const y = s.invert ? pad + (1-t)(h-2*pad) : h - pad - t(h-2*pad);
+          const x = xs[i];
+          ctx.fillStyle = s.color;
+          ctx.beginPath(); ctx.arc(x,y,3*devicePixelRatio,0,Math.PI*2); ctx.fill();
+        });
+      });
+
+      // store for hover
+      hoverCache = { data, xs, pad, w, h, series };
+    }
+
+    let hoverCache = null;
+    canvas.addEventListener("mousemove", (e)=>{
+      if(!hoverCache) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * devicePixelRatio;
+      // find nearest index
+      let bestI = 0, bestD = Infinity;
+      hoverCache.xs.forEach((xx,i)=>{ const d = Math.abs(xx - x); if(d<bestD){bestD=d; bestI=i;} });
+      const entry = hoverCache.data[bestI]; if(!entry) return;
+      const text = ${fmtDate(entry.date)} • Mood ${entry.mood} • Stress ${entry.stress} • Sleep ${entry.sleep} • Energy ${entry.energy};
+      tip.textContent = text;
+      tip.style.left = (e.clientX - rect.left + 10) + "px";
+      tip.style.top = (e.clientY - rect.top - 24) + "px";
+      tip.classList.remove("hidden");
+    });
+    canvas.addEventListener("mouseleave", ()=> tip.classList.add("hidden"));
+
+    // UI Logic
+    let currentMood = null;
+    let currentRange = 7; // default weekly
+    const data = loadData();
+
+    function setTodayLabel(){
+      $("#todayLabel").textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+    }
+
+    function selectMood(m){
+      currentMood = Number(m);
+      $$(".mood-pill").forEach(btn=>{
+        const on = Number(btn.dataset.mood) === currentMood;
+        btn.classList.toggle("ring-4", on);
+        btn.classList.toggle("ring-emerald-400/40", on);
+      });
+    }
+
+    $$(".mood-pill").forEach(b => b.addEventListener("click", ()=> selectMood(b.dataset.mood)));
+
+    $("#btn-save").addEventListener("click", ()=>{
+      if(!currentMood){ $("#saveStatus").textContent = "Choose a mood to save."; return; }
+      const entry = {
+        date: todayISO(),
+        mood: currentMood,
+        stress: Number($("#stress").value),
+        sleep: Number($("#sleep").value),
+        energy: Number($("#energy").value),
+        note: $("#note").value.trim()
+      };
+      // replace today's entry if exists
+      const idx = data.entries.findIndex(e=>e.date===entry.date);
+      if(idx>=0) data.entries[idx] = entry; else data.entries.push(entry);
+      saveData(data);
+      $("#saveStatus").textContent = "Saved!";
+      setTimeout(()=> $("#saveStatus").textContent = "", 1600);
+      refreshInsights();
+      drawChart();
+    });
+
+    $("#btn-clear-note").addEventListener("click", ()=> { $("#note").value = ""; });
+
+    // Range controls
+    $("#range-week").addEventListener("click", ()=>{ currentRange = 7; drawChart(); });
+    $("#range-month").addEventListener("click", ()=>{ currentRange = 30; drawChart(); });
+
+    // Insights
+    function refreshInsights(){
+      const rangeData = getRange(data.entries, currentRange);
+      const notes = rangeData.map(e=>e.note).filter(Boolean);
+      const s = analyzeSentiment(notes);
+      $("#sentimentText").textContent = notes.length ? ${s.label} (score ${s.score >=0 ? '+' : ''}${s.score}) : "Add a note to see sentiment insights.";
+      const tags = $("#sentimentTags"); tags.innerHTML = "";
+      s.tags.forEach(t=>{
+        const pill = document.createElement("span");
+        pill.className = "text-xs px-2 py-1 rounded-full bg-white/10 border border-white/15";
+        pill.textContent = t;
+        tags.appendChild(pill);
+      });
+
+      const streaks = calcStreaks(data.entries);
+      $("#streakText").textContent = data.entries.length ? Current ${streaks.current} day(s) • Longest ${streaks.longest} : "Start a streak with your first check-in!";
+      const badges = $("#habitBadges"); badges.innerHTML = "";
+      if(streaks.current >= 3){
+        const b = document.createElement("span"); b.className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30"; b.textContent="Consistency +";
+        badges.appendChild(b);
+      }
+      if(rangeData.length >= 5){
+        const avg = k => Math.round(rangeData.reduce((a,e)=>a+e[k],0)/rangeData.length);
+        const goodSleep = avg('sleep') >= 7;
+        if(goodSleep){
+          const b2 = document.createElement("span"); b2.className="text-xs px-2 py-1 rounded-full bg-sky-500/20 border border-sky-400/30"; b2.textContent="Rested Rhythm";
+          badges.appendChild(b2);
+        }
+      }
+
+      const last = rangeData[rangeData.length-1] || data.entries[data.entries.length-1];
+      const tipList = $("#tips"); tipList.innerHTML = "";
+      if(last){
+        const tips = getRecommendations(last, data.entries);
+        tips.forEach(t=>{
+          const li = document.createElement("li"); li.textContent = t; tipList.appendChild(li);
+        });
+      } else {
+        const li = document.createElement("li"); li.textContent = "Log a mood to get tailored tips here."; tipList.appendChild(li);
+      }
+    }
+
+    // Toolkit: Breathing
+    let breathTimer = null, breathTotal = 60, breathLeft = 60;
+    $("#breathStart").addEventListener("click", ()=>{
+      if(breathTimer) { clearInterval(breathTimer); breathTimer = null; $("#breathStatus").textContent = ""; $("#breathBar").style.width = "0%"; return; }
+      breathLeft = breathTotal;
+      phase = 0; count = 4;
+      $("#breathStatus").textContent = "Inhale...";
+      const start = Date.now();
+      breathTimer = setInterval(()=>{
+        const elapsed = Math.floor((Date.now()-start)/1000);
+        breathLeft = Math.max(0, breathTotal - elapsed);
+        const pct = Math.min(100, (elapsed / breathTotal) * 100);
+        $("#breathBar").style.width = pct + "%";
+        // phase cycle every 4 seconds
+        const sec = elapsed % 16;
+        if(sec<4) $("#breathStatus").textContent = "Inhale...";
+        else if(sec<8) $("#breathStatus").textContent = "Hold...";
+        else if(sec<12) $("#breathStatus").textContent = "Exhale...";
+        else $("#breathStatus").textContent = "Hold...";
+        if(breathLeft<=0) { clearInterval(breathTimer); breathTimer=null; $("#breathStatus").textContent = "Complete ✔"; }
+      }, 200);
+    });
+
+    // Toolkit: Gratitude
+    $("#saveGratitude").addEventListener("click", ()=>{
+      const a = $("#g1").value.trim(), b = $("#g2").value.trim(), c = $("#g3").value.trim();
+      if(!(a||b||c)) { $("#gratitudeStatus").textContent = "Add at least one."; setTimeout(()=>$("#gratitudeStatus").textContent="",1500); return; }
+      const entry = { date: todayISO(), items: [a,b,c].filter(Boolean) };
+      data.gratitude = data.gratitude.filter(g=>g.date!==entry.date).concat([entry]);
+      saveData(data);
+      $("#gratitudeStatus").textContent = "Saved to today.";
+      setTimeout(()=> $("#gratitudeStatus").textContent = "", 1500);
+      $("#g1").value = $("#g2").value = $("#g3").value = "";
+    });
+
+    // Export / Import
+    $("#btn-export").addEventListener("click", ()=>{
+      const blob = new Blob([ JSON.stringify(loadData(), null, 2) ], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'wellness-data.json'; a.click(); URL.revokeObjectURL(url);
+      $("#exportStatus").textContent = "Exported.";
+      setTimeout(()=> $("#exportStatus").textContent = "", 1500);
+    });
+    $("#btn-import").addEventListener("click", ()=> $("#importFile").click());
+    $("#importFile").addEventListener("change", (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if(parsed && parsed.entries && parsed.gratitude){
+            localStorage.setItem(KEY, JSON.stringify(parsed));
+            Object.assign(data, parsed);
+            refreshInsights(); drawChart();
+            $("#exportStatus").textContent = "Imported.";
+          } else { $("#exportStatus").textContent = "Invalid file."; }
+        } catch {
+          $("#exportStatus").textContent = "Could not read file.";
+        }
+        setTimeout(()=> $("#exportStatus").textContent = "", 1500);
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+
+    // Init
+    function init(){
+      setTodayLabel();
+      resizeCanvas();
+      refreshInsights();
+      // Restore today's selection if exists
+      const todayEntry = data.entries.find(e=>e.date===todayISO());
+      if(todayEntry){
+        selectMood(todayEntry.mood);
+        $("#stress").value = todayEntry.stress;
+        $("#sleep").value = todayEntry.sleep;
+        $("#energy").value = todayEntry.energy;
+        $("#note").value = todayEntry.note || "";
+      }
+      // Redraw on toggles
+      ["toggleMood","toggleStress","toggleSleep","toggleEnergy"].forEach(id=>{
+        $("#"+id).addEventListener("change", drawChart);
+      });
+    }
+    init();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e63d94060e9f47',t:'MTc1Nzc1MTc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
